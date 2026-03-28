@@ -12,4 +12,4 @@ COPY --from=builder /backend/data/modules/tictactoe.js /nakama/data/modules/tict
 
 EXPOSE 7350
 
-ENTRYPOINT ["/bin/sh", "-c", "/nakama/nakama migrate up --database.address $DB_URL && exec /nakama/nakama --database.address $DB_URL --socket.port ${PORT:-7350} --logger.level DEBUG --runtime.js_entrypoint tictactoe.js"]
+ENTRYPOINT ["/bin/sh", "-c", "/nakama/nakama migrate up --database.address $DB_URL && exec /nakama/nakama --database.address $DB_URL --socket.address 0.0.0.0 --socket.port ${PORT} --logger.level DEBUG --runtime.js_entrypoint tictactoe.js"]
