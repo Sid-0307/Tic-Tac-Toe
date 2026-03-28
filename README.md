@@ -92,12 +92,6 @@ Supabase PostgreSQL
   https://tic-tac-toe-kf84.onrender.com
   ```
 
-* **Health Check:**
-
-  ```
-  /v2/healthcheck
-  ```
-
 * **Runtime Module:**
 
   ```
@@ -122,17 +116,7 @@ Supabase PostgreSQL
 
 ## 🧪 Testing Multiplayer
 
-### 1. Backend Check
-
-Open:
-
-```
-https://tic-tac-toe-kf84.onrender.com/v2/healthcheck
-```
-
----
-
-### 2. Run Frontend
+### 1. Run Frontend
 
 ```
 https://tic-tac-toe-nine-weld-83.vercel.app
@@ -140,7 +124,7 @@ https://tic-tac-toe-nine-weld-83.vercel.app
 
 ---
 
-### 3. Test Flow
+### 2. Test Flow
 
 1. Open **2 browser tabs**
 2. Enter different usernames
@@ -149,7 +133,7 @@ https://tic-tac-toe-nine-weld-83.vercel.app
 
 ---
 
-### 4. Validate
+### 3. Validate
 
 * Moves sync in real-time
 * Turn-based locking works
