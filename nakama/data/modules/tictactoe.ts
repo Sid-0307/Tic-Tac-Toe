@@ -1,24 +1,3 @@
-// tictactoe.ts — Nakama server-side runtime (TypeScript)
-// Compiled to JS using esbuild before loading by Nakama.
-// NO browser APIs. NO fetch. NO DOM. Only nkruntime globals.
-//
-// IMPORTANT NAKAMA JS RUNTIME RULES:
-//   - InitModule MUST be a `function` declaration (not const/let/var arrow fn)
-//     so goja's vm.Get("InitModule") can find it in global scope.
-//   - All match handlers passed to registerMatch must be plain functions.
-//   - nkruntime const enums (SortOrder, Operator, ResetSchedule) are NOT
-//     available at runtime — use their numeric/string literal values.
-//   - message.data is already a string in goja — no need for binaryToString.
-//   - Object.fromEntries is not available — use a manual loop.
-//   - matchSignal MUST declare 7 parameters including `data: string` as the
-//     last argument, otherwise goja throws "matchSignal not found".
-//   - registerMatchmakerMatched MUST be passed a named function reference,
-//     not an inline/anonymous function, so Nakama's AST parser can find it.
-
-// ─────────────────────────────────────────────
-// OPCODE CONSTANTS
-// ─────────────────────────────────────────────
-
 var OPCODE_GAME_START = 1;
 var OPCODE_MOVE = 2;
 var OPCODE_GAME_STATE_UPDATE = 3;
@@ -36,10 +15,6 @@ var WIN_LINES: number[][] = [
   [0, 3, 6], [1, 4, 7], [2, 5, 8],
   [0, 4, 8], [2, 4, 6],
 ];
-
-// ─────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────
 
 interface PlayerInfo {
   symbol: "X" | "O";
@@ -60,10 +35,6 @@ interface GameState {
   moveCount: number;
   started: boolean;
 }
-
-// ─────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────
 
 function checkWinner(board: Array<string | null>): string | null {
   for (var i = 0; i < WIN_LINES.length; i++) {
@@ -117,11 +88,38 @@ function writeLeaderboard(
   logger: nkruntime.Logger,
   userId: string,
   username: string,
-  score: number,
-  metadata: { [key: string]: unknown }
+  scoreDelta: number,
+  metadataDelta: { wins: number; losses: number; draws: number }
 ): void {
   try {
-    nk.leaderboardRecordWrite(LEADERBOARD_ID, userId, username, score, 0, metadata);
+    var oldWins = 0, oldLosses = 0, oldDraws = 0;
+    var currentScore = 0;
+    
+    try {
+      var records = nk.leaderboardRecordsList(LEADERBOARD_ID, [userId], 1);
+      if (records && records.ownerRecords && records.ownerRecords.length > 0) {
+        var rec = records.ownerRecords[0];
+        currentScore = rec.score || 0;
+        
+        var prevMetaStr = rec.metadata;
+        var prevMeta = typeof prevMetaStr === "string" ? JSON.parse(prevMetaStr) : (prevMetaStr || {});
+        oldWins = prevMeta.wins || 0;
+        oldLosses = prevMeta.losses || 0;
+        oldDraws = prevMeta.draws || 0;
+      }
+    } catch (e) {
+      logger.warn("Failed retrieving leaderboard data: %s", String(e));
+    }
+
+    var newMeta = {
+      wins: oldWins + (metadataDelta.wins || 0),
+      losses: oldLosses + (metadataDelta.losses || 0),
+      draws: oldDraws + (metadataDelta.draws || 0)
+    };
+
+    var newScore = currentScore + scoreDelta;
+    var newSubscore = newMeta.wins + newMeta.losses + newMeta.draws;
+    nk.leaderboardRecordWrite(LEADERBOARD_ID, userId, username, newScore, newSubscore, newMeta);
   } catch (e) {
     logger.error("Failed to write leaderboard record: %s", String(e));
   }
@@ -145,21 +143,14 @@ function buildPlayersPayload(state: GameState): object {
   return result;
 }
 
-// ─────────────────────────────────────────────
-// MATCH HANDLERS
-// ─────────────────────────────────────────────
-
 function matchInit(
   ctx: nkruntime.Context,
   logger: nkruntime.Logger,
   nk: nkruntime.Nakama,
   params: { [key: string]: string }
 ): { state: GameState; tickRate: number; label: string } {
-  logger.info("matchInit called");
-
   try {
-    nk.leaderboardCreate(LEADERBOARD_ID, false, 1, 0, "", {});
-    logger.info("Leaderboard ready: %s", LEADERBOARD_ID);
+    nk.leaderboardCreate(LEADERBOARD_ID, false, "desc" as any, "set" as any, "", {});
   } catch (e) {
     logger.warn("Leaderboard create (may already exist): %s", String(e));
   }
@@ -190,8 +181,6 @@ function matchJoinAttempt(
   presence: nkruntime.Presence,
   metadata: { [key: string]: unknown }
 ): { state: GameState; accept: boolean; rejectMessage?: string } | null {
-  logger.info("matchJoinAttempt: %s", presence.userId);
-
   if (state.playerOrder.length >= 2) {
     return { state: state, accept: false, rejectMessage: "Match is full" };
   }
@@ -207,8 +196,6 @@ function matchJoin(
   state: GameState,
   presences: nkruntime.Presence[]
 ): { state: GameState } | null {
-  logger.info("matchJoin: %d presence(s) joining", presences.length);
-
   for (var i = 0; i < presences.length; i++) {
     var presence = presences[i];
     if (state.players[presence.userId]) continue;
@@ -221,17 +208,14 @@ function matchJoin(
       presence: presence,
     };
     state.playerOrder.push(presence.userId);
-    logger.info("Player joined: %s as %s", presence.userId, symbol);
   }
 
   if (state.playerOrder.length === 2 && !state.started) {
     state.started = true;
-    var firstIndex = Math.random() < 0.5 ? 0 : 1;
+    var firstIndex = 0;
     state.currentTurn = state.playerOrder[firstIndex];
     state.turnStartTime = Date.now();
     state.turnTimeRemaining = TURN_DURATION_SECONDS;
-
-    logger.info("Game starting! First turn: %s", state.currentTurn);
     broadcastAll(dispatcher, OPCODE_GAME_START, encodeState(state), collectPresences(state));
   }
 
@@ -247,8 +231,6 @@ function matchLeave(
   state: GameState,
   presences: nkruntime.Presence[]
 ): { state: GameState } | null {
-  logger.info("matchLeave: %d presence(s) leaving", presences.length);
-
   for (var i = 0; i < presences.length; i++) {
     var presence = presences[i];
     if (!state.gameOver && state.started) {
@@ -306,7 +288,6 @@ function matchLoop(
     }), allPresences);
 
     if (state.turnTimeRemaining === 0) {
-      logger.info("Timer expired for: %s, forfeiting turn", state.currentTurn);
       var nextId = getOtherPlayerId(state, state.currentTurn);
       if (nextId) {
         state.currentTurn = nextId;
@@ -323,48 +304,27 @@ function matchLoop(
 
     var moveData: { position: number };
     try {
-      logger.info("Raw message data type: %s", typeof message.data);
-      if (typeof message.data !== "string") {
-        logger.info("Raw message data keys (if object): %s", Object.keys(message.data || {}).join(","));
-      }
-
       var dataStr = nk.binaryToString(message.data as Uint8Array);
-      logger.info("Decoded with nk.binaryToString: %s", dataStr);
     } catch (e) {
-      logger.info("nk.binaryToString failed, falling back to string coercion or message.data");
       var dataStr = typeof message.data === "string" ? message.data : String(message.data);
     }
 
     try {
-      logger.info("Final dataStr to parse: %s", dataStr);
       moveData = JSON.parse(dataStr);
     } catch (e) {
-      logger.warn("Failed to parse move payload: %s (dataStr: %s)", String(e), dataStr);
       continue;
     }
 
     var senderId = message.sender.userId;
     var position = moveData.position;
 
-    if (state.gameOver) {
-      logger.warn("Move rejected: game is over");
-      continue;
-    }
-    if (senderId !== state.currentTurn) {
-      logger.warn("Move rejected: not %s's turn (current: %s)", senderId, state.currentTurn);
-      continue;
-    }
-    if (typeof position !== "number" || position < 0 || position > 8 ||
-        state.board[position] !== null) {
-      logger.warn("Move rejected: invalid position %d", position);
-      continue;
-    }
+    if (state.gameOver) continue;
+    if (senderId !== state.currentTurn) continue;
+    if (typeof position !== "number" || position < 0 || position > 8 || state.board[position] !== null) continue;
 
     var playerInfo = state.players[senderId];
     state.board[position] = playerInfo.symbol;
     state.moveCount++;
-
-    logger.info("Move: %s placed %s at %d", senderId, playerInfo.symbol, position);
 
     var movePresences = collectPresences(state);
     var winningSymbol = checkWinner(state.board);
@@ -380,7 +340,6 @@ function matchLoop(
       if (isDraw) {
         state.winner = "draw";
         points = DRAW_POINTS;
-        logger.info("Game over: DRAW");
         for (var di = 0; di < state.playerOrder.length; di++) {
           var duid = state.playerOrder[di];
           state.players[duid].score += DRAW_POINTS;
@@ -399,7 +358,6 @@ function matchLoop(
           winnerName = state.players[winnerId].username;
           state.players[winnerId].score += WIN_POINTS;
           points = WIN_POINTS;
-          logger.info("Game over: winner = %s", winnerId);
 
           writeLeaderboard(nk, logger, winnerId, winnerName, WIN_POINTS,
             { wins: 1, losses: 0, draws: 0 });
@@ -444,7 +402,6 @@ function matchTerminate(
   state: GameState,
   graceSeconds: number
 ): { state: GameState } | null {
-  logger.info("matchTerminate called");
   return { state: state };
 }
 
@@ -460,33 +417,19 @@ function matchSignal(
   return { state: state, data: "" };
 }
 
-// ─────────────────────────────────────────────
-// MATCHMAKER HANDLER (must be a named function,
-// not inline — Nakama's AST parser requires a
-// named reference in registerMatchmakerMatched)
-// ─────────────────────────────────────────────
-
 function matchmakerMatched(
   ctx: nkruntime.Context,
   logger: nkruntime.Logger,
   nk: nkruntime.Nakama,
   matches: nkruntime.MatchmakerResult[]
 ): string | void {
-  logger.info("Matchmaker matched: %d players", matches.length);
   try {
     var matchId = nk.matchCreate("tictactoe", {});
-    logger.info("Created match: %s", matchId);
     return matchId;
   } catch (e) {
     logger.error("Failed to create match: %s", String(e));
   }
 }
-
-// ─────────────────────────────────────────────
-// INIT MODULE
-// Must be a `function` declaration (not const/let/var) so that
-// goja's global scope lookup (vm.Get("InitModule")) finds it.
-// ─────────────────────────────────────────────
 
 function InitModule(
   ctx: nkruntime.Context,
@@ -494,8 +437,6 @@ function InitModule(
   nk: nkruntime.Nakama,
   initializer: nkruntime.Initializer
 ): void {
-  logger.info("Initializing tictactoe module");
-
   initializer.registerMatch("tictactoe", {
     matchInit: matchInit,
     matchJoinAttempt: matchJoinAttempt,
@@ -505,8 +446,6 @@ function InitModule(
     matchTerminate: matchTerminate,
     matchSignal: matchSignal,
   });
-
   initializer.registerMatchmakerMatched(matchmakerMatched);
-
   logger.info("tictactoe module initialized successfully");
 }

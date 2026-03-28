@@ -14,14 +14,20 @@
   }
 
   body {
-    @apply bg-navy-900 text-white font-sans;
+    @apply bg-ebony-950 text-neutral-100 font-sans;
     margin: 0;
     padding: 0;
-    min-height: 100dvh;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
   }
 
   #root {
-    min-height: 100dvh;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 }
 
@@ -51,8 +57,8 @@
   }
 
   /* Text glow */
-  .text-glow-teal {
-    text-shadow: 0 0 20px rgba(0, 206, 201, 0.6);
+  .text-glow-bumble {
+    text-shadow: 0 0 20px rgba(255, 208, 0, 0.5);
   }
 }
 
@@ -73,6 +79,6 @@
 
 /* Selection styling */
 ::selection {
-  background: rgba(0, 206, 201, 0.3);
+  background: rgba(255, 208, 0, 0.3);
   color: white;
 }

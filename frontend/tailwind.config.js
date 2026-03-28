@@ -8,20 +8,21 @@ export default {
   theme: {
     extend: {
       colors: {
-        navy: {
-          900: '#0f0f1a',
-          800: '#1a1a2e',
-          700: '#16213e',
-          600: '#0f3460',
+        ebony: {
+          950: '#050505',
+          900: '#0a0a0a',
+          800: '#111111',
+          700: '#1a1a1a',
+          600: '#262626',
         },
-        teal: {
-          400: '#00cec9',
-          500: '#00b894',
-          600: '#00a381',
+        bumble: {
+          400: '#ffd000',
+          500: '#ffb700',
+          600: '#ff9900',
         },
-        coral: {
-          400: '#fd79a8',
-          500: '#e84393',
+        crimson: {
+          400: '#ff4d4f',
+          500: '#f5222d',
         },
       },
       fontFamily: {
@@ -44,8 +45,13 @@ export default {
           '100%': { transform: 'scale(1)', opacity: '1' },
         },
         glow: {
-          '0%, 100%': { boxShadow: '0 0 5px rgba(0, 206, 201, 0.3)' },
-          '50%': { boxShadow: '0 0 20px rgba(0, 206, 201, 0.6)' },
+          '0%, 100%': { boxShadow: '0 0 10px rgba(255, 208, 0, 0.2)' },
+          '50%': { boxShadow: '0 0 25px rgba(255, 208, 0, 0.5)' },
+        },
+        pulseRing: {
+          '0%': { transform: 'scale(0.8)', boxShadow: '0 0 0 0 rgba(255, 208, 0, 0.7)' },
+          '70%': { transform: 'scale(1)', boxShadow: '0 0 0 20px rgba(255, 208, 0, 0)' },
+          '100%': { transform: 'scale(0.8)', boxShadow: '0 0 0 0 rgba(255, 208, 0, 0)' },
         },
       },
     },

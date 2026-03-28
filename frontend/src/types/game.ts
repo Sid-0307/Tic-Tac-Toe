@@ -1,9 +1,7 @@
-// ─── Shared TypeScript types for the Tic-Tac-Toe frontend ───
 
 export type Phase = "nickname" | "matchmaking" | "playing" | "result";
 export type PlayerSymbol = "X" | "O";
 
-// Matches server GameState wire format (presences stripped)
 export interface PlayerWireInfo {
   symbol: PlayerSymbol;
   username: string;
@@ -18,10 +16,9 @@ export interface LeaderboardEntry {
   wins: number;
   losses: number;
   draws: number;
-  numScore?: number; // raw numScore from Nakama record
+  numScore?: number;
 }
 
-// Opcodes — must match tictactoe.ts server values exactly
 export const OPCODES = {
   GAME_START: 1,
   MOVE: 2,
@@ -31,7 +28,6 @@ export const OPCODES = {
   PLAYER_DISCONNECTED: 6,
 } as const;
 
-// Payload shapes for each opcode received from server
 export interface GameStartPayload {
   board: Array<string | null>;
   currentTurn: string;
@@ -51,7 +47,7 @@ export interface GameStatePayload {
 }
 
 export interface GameOverPayload {
-  winner: string | null; // userId or "draw"
+  winner: string | null;
   winnerName: string;
   points: number;
   board: Array<string | null>;
@@ -71,7 +67,6 @@ export interface PlayerDisconnectedPayload {
   winnerName: string;
 }
 
-// Nakama leaderboard record metadata stored per write
 export interface LeaderboardMetadata {
   wins: number;
   losses: number;

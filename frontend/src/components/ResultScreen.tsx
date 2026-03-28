@@ -35,28 +35,28 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   }, [onFetchLeaderboard]);
 
   return (
-    <div className="fixed inset-0 bg-navy-900 flex flex-col overflow-y-auto">
-      {/* Ambient glow */}
+    <div className="fixed inset-0 bg-ebony-950 flex flex-col justify-center overflow-hidden">
+
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div
-          className={`absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full blur-3xl opacity-10
-            ${isDraw ? 'bg-gray-400' : iWon ? 'bg-teal-400' : 'bg-red-500'}`}
+          className={`absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full blur-[80px] opacity-[0.12]
+            ${isDraw ? 'bg-neutral-500' : iWon ? 'bg-bumble-500' : 'bg-crimson-500'}`}
         />
       </div>
 
-      <div className="relative flex flex-col items-center px-4 pt-10 pb-8 min-h-full max-w-md mx-auto w-full">
+      <div className="relative flex flex-col items-center px-4 py-6 max-h-[100dvh] max-w-md mx-auto w-full h-full">
 
-        {/* Big symbol + result */}
-        <div className="flex flex-col items-center mb-6">
+
+        <div className="flex flex-col items-center mb-4 flex-shrink-0">
           {isDraw ? (
-            <div className="text-7xl font-black text-white/20 mb-4 animate-bounce-in">
+            <div className="text-6xl font-black text-white/10 mb-3 animate-bounce-in drop-shadow-xl">
               ½
             </div>
           ) : (
             <div
               className={`
-                text-8xl font-black mb-4 animate-bounce-in
-                ${iWon ? 'text-teal-400 drop-shadow-[0_0_30px_rgba(0,206,201,0.5)]' : 'text-white/30'}
+                text-7xl font-black mb-3 animate-bounce-in
+                ${iWon ? 'text-bumble-500 drop-shadow-[0_0_30px_rgba(255,208,0,0.4)]' : 'text-crimson-500/80 drop-shadow-[0_0_20px_rgba(255,77,79,0.3)]'}
               `}
             >
               {winnerSymbol === 'X' ? '✕' : '○'}
@@ -64,109 +64,110 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           )}
 
           <h1
-            className={`text-4xl font-black tracking-tight mb-2 ${
+            className={`text-4xl font-black tracking-tighter mb-1 ${
               isDraw
                 ? 'text-white/60'
                 : iWon
-                  ? 'text-teal-400'
-                  : 'text-white/60'
+                  ? 'text-bumble-500'
+                  : 'text-crimson-400'
             }`}
           >
-            {isDraw ? 'DRAW!' : iWon ? 'WINNER!' : 'DEFEAT'}
+            {isDraw ? 'DRAW!' : iWon ? 'VICTORY' : 'DEFEAT'}
           </h1>
 
           {!isDraw && winnerName && (
-            <p className="text-white/50 text-sm mb-4">
-              {iWon ? 'Congratulations!' : `${winnerName} wins`}
+            <p className="text-white/50 text-sm font-medium tracking-wide mb-4">
+              {iWon ? 'Outstanding performance!' : `${winnerName} takes the win`}
             </p>
           )}
           {isDraw && (
-            <p className="text-white/50 text-sm mb-4">Well played, both of you!</p>
+            <p className="text-white/50 text-sm font-medium tracking-wide mb-4">A perfectly matched game.</p>
           )}
 
-          {/* Points badge */}
+
           <div
             className={`
-              inline-flex items-center gap-2 px-5 py-2 rounded-full font-bold text-lg
+              inline-flex items-center gap-2 px-5 py-2 rounded-full font-bold text-base shadow-inner border
               ${pointsEarned > 0
-                ? 'bg-teal-500/20 border border-teal-500/40 text-teal-400'
-                : 'bg-white/5 border border-white/10 text-white/40'}
+                ? 'bg-bumble-500/10 border-bumble-500/30 text-bumble-400 shadow-[0_0_15px_rgba(255,208,0,0.1)]'
+                : 'bg-ebony-800/50 border-white/5 text-white/40'}
             `}
           >
-            <span className="text-lg">★</span>
-            <span>
+            <span className="text-lg leading-none">★</span>
+            <span className="leading-none">
               {pointsEarned > 0 ? `+${pointsEarned} pts` : '+0 pts'}
             </span>
           </div>
         </div>
 
-        {/* Leaderboard */}
-        <div className="w-full bg-navy-800 border border-white/10 rounded-2xl overflow-hidden mb-6">
-          <div className="flex items-center gap-2 px-5 py-4 border-b border-white/5">
-            <span className="text-teal-400 text-lg">🏆</span>
-            <h2 className="font-bold text-white text-lg">Leaderboard</h2>
-            <span className="ml-auto text-white/30 text-xs">Top 10</span>
+
+        <div className="w-full bg-ebony-900 border border-white/5 rounded-3xl shadow-2xl overflow-hidden mb-auto backdrop-blur-xl flex flex-col max-h-[315px]">
+          <div className="flex items-center gap-3 px-6 py-5 border-b border-white/5 bg-ebony-950/50">
+            <span className="text-bumble-500 text-xl drop-shadow-[0_0_5px_rgba(255,208,0,0.5)]">🏆</span>
+            <h2 className="font-black tracking-wide text-white text-lg">LEADERBOARD</h2>
+            <span className="ml-auto text-white/30 text-[10px] font-bold uppercase tracking-widest">Global Top 5</span>
           </div>
 
-          {/* Column headers */}
-          <div className="grid grid-cols-[2rem_1fr_3rem_3rem_3rem_4rem] gap-1 px-4 py-2 text-white/30 text-xs font-semibold uppercase tracking-wider border-b border-white/5">
+
+          <div className="grid grid-cols-[2rem_1fr_2.5rem_2.5rem_2.5rem_3.5rem] gap-2 px-5 py-3 text-white/20 text-[10px] font-black uppercase tracking-widest border-b border-white/5 bg-ebony-900/50">
             <span>#</span>
             <span>Player</span>
             <span className="text-center">W</span>
             <span className="text-center">L</span>
             <span className="text-center">D</span>
-            <span className="text-right">Score</span>
+            <span className="text-right">Pts</span>
           </div>
 
           {leaderboard.length === 0 ? (
-            <div className="py-8 text-center text-white/30 text-sm">
-              Loading leaderboard...
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="w-5 h-5 border-2 border-bumble-500/20 border-t-bumble-500 rounded-full animate-spin mb-2"></div>
+              <span className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Loading...</span>
             </div>
           ) : (
-            leaderboard.map((entry, i) => {
-              const isMe = entry.userId === myUserId;
-              return (
-                <div
-                  key={entry.userId || i}
-                  className={`
-                    grid grid-cols-[2rem_1fr_3rem_3rem_3rem_4rem] gap-1 px-4 py-2.5
-                    text-sm transition-colors
-                    ${isMe
-                      ? 'bg-teal-500/10 border-l-2 border-teal-500 text-white'
-                      : 'border-b border-white/5 text-white/70 hover:bg-white/3'}
-                    ${i === 0 ? 'text-yellow-400' : ''}
-                  `}
-                >
-                  <span className={`font-bold ${i === 0 ? 'text-yellow-400' : 'text-white/40'}`}>
-                    {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : entry.rank}
-                  </span>
-                  <span className={`font-medium truncate ${isMe ? 'text-teal-300 font-bold' : ''}`}>
-                    {isMe ? `${myNickname} (you)` : entry.username}
-                  </span>
-                  <span className="text-center text-green-400 font-semibold">{entry.wins}</span>
-                  <span className="text-center text-red-400/80 font-semibold">{entry.losses}</span>
-                  <span className="text-center text-yellow-400/80 font-semibold">{entry.draws}</span>
-                  <span className="text-right font-bold text-teal-400">{entry.score}</span>
-                </div>
-              );
-            })
+            <div className="py-1 flex flex-col justify-start">
+              {leaderboard.map((entry, i) => {
+                const isMe = entry.userId === myUserId;
+                return (
+                  <div
+                    key={entry.userId || i}
+                    className={`
+                      grid grid-cols-[1.5rem_1fr_2.5rem_2.5rem_2.5rem_3.5rem] gap-2 px-4 py-2 text-sm transition-all duration-200 group h-10 items-center
+                      ${isMe
+                        ? 'bg-bumble-500/5 border-l-2 border-bumble-500 text-white'
+                        : 'border-b border-white/[0.02] text-white/70 hover:bg-white-[0.02] last:border-0'}
+                    `}
+                  >
+                    <span className="font-black text-white/20 flex items-center">
+                      <span className="text-lg"> {entry.rank}</span>
+                    </span>
+                    <span className={`font-semibold truncate flex items-center ${isMe ? 'text-bumble-400' : 'text-white/80'}`}>
+                      {isMe ? `${myNickname} (You)` : entry.username}
+                    </span>
+                    <span className="flex items-center justify-center text-green-400/80 font-bold text-xs">{entry.wins}</span>
+                    <span className="flex items-center justify-center text-crimson-400/80 font-bold text-xs">{entry.losses}</span>
+                    <span className="flex items-center justify-center text-neutral-400/80 font-bold text-xs">{entry.draws}</span>
+                    <span className="flex items-center justify-end font-black text-bumble-400">{entry.score}</span>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
 
-        {/* Play Again */}
+
         <button
           id="play-again-btn"
           onClick={onPlayAgain}
           className="
-            w-full py-4 rounded-xl font-bold text-base
-            border-2 border-teal-500/50 text-teal-400
-            hover:bg-teal-500/10 hover:border-teal-400
-            transition-all duration-200
-            hover:scale-[1.01] active:scale-[0.99]
-            focus:outline-none focus:ring-2 focus:ring-teal-500/30
+            mt-auto w-full py-5 rounded-xl font-black text-lg tracking-wide shadow-2xl
+            bg-bumble-500 text-ebony-950 flex-shrink-0
+            hover:bg-bumble-400 hover:shadow-[0_0_30px_rgba(255,183,0,0.4)]
+            transition-all duration-300
+            hover:scale-[1.02] active:scale-[0.98]
+            focus:outline-none focus:ring-2 focus:ring-bumble-500/50
           "
         >
-          ↺ Play Again
+          PLAY AGAIN
         </button>
       </div>
     </div>

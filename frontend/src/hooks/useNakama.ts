@@ -13,7 +13,7 @@ import {
   PlayerDisconnectedPayload,
 } from '../types/game';
 
-// ─── Config ──────────────────────────────────────────────────
+
 const NAKAMA_HOST = import.meta.env.VITE_NAKAMA_HOST || 'localhost';
 const NAKAMA_PORT = import.meta.env.VITE_NAKAMA_PORT || '7350';
 const USE_SSL = import.meta.env.VITE_NAKAMA_USE_SSL === 'true';
@@ -21,7 +21,7 @@ const SERVER_KEY = 'defaultkey';
 const DEVICE_ID_KEY = 'ttt_device_id';
 const MATCHMAKER_QUERY = '*';
 
-// ─── Hook Interface ───────────────────────────────────────────
+
 export interface NakamaState {
   phase: Phase;
   nickname: string;
@@ -71,7 +71,7 @@ const INITIAL_STATE: NakamaState = {
   error: null,
 };
 
-// ─── Hook ─────────────────────────────────────────────────────
+
 export function useNakama(): NakamaState & NakamaActions {
   const [state, setState] = useState<NakamaState>(INITIAL_STATE);
 
@@ -83,7 +83,7 @@ export function useNakama(): NakamaState & NakamaActions {
   const nicknameRef = useRef<string>('');
   const myUserIdRef = useRef<string>('');
 
-  // ── Helpers ───────────────────────────────────────────────────
+
 
   const getOrCreateDeviceId = (): string => {
     let deviceId = localStorage.getItem(DEVICE_ID_KEY);
@@ -105,7 +105,7 @@ export function useNakama(): NakamaState & NakamaActions {
     setState((prev) => ({ ...prev, ...updates }));
   };
 
-  // ── Socket event setup ────────────────────────────────────────
+
 
   const setupSocketHandlers = useCallback((socket: Socket) => {
     socket.onmatchdata = (matchData) => {
@@ -203,17 +203,6 @@ export function useNakama(): NakamaState & NakamaActions {
         matchmakerTicketRef.current = null;
         updateState({ statusMessage: 'Match found! Joining...' });
 
-        // Log to help diagnose which field is populated
-        console.log('onmatchmakermatched:', JSON.stringify({
-          token: matched.token,
-          // @ts-ignore
-          match_id: matched.match_id,
-        }));
-
-        // For authoritative matches (server returns a match ID), Nakama SDK
-        // puts the match ID in matched.match_id. For relayed matches it uses
-        // matched.token. Check both — use whichever is non-empty.
-        // @ts-ignore
         const joinWith: string = matched.match_id || matched.token;
 
         if (!joinWith) {
@@ -249,7 +238,7 @@ export function useNakama(): NakamaState & NakamaActions {
     };
   }, []);
 
-  // ── Auth + Socket ─────────────────────────────────────────────
+
 
   const authenticateAndConnect = async (
     nicknameToSet: string
@@ -260,8 +249,6 @@ export function useNakama(): NakamaState & NakamaActions {
     const session = await client.authenticateDevice(deviceId, true, nicknameToSet);
     sessionRef.current = session;
 
-    // updateAccount can fail if the username is already taken by this or
-    // another account — that is non-fatal, the session is still valid.
     try {
       await client.updateAccount(session, {
         display_name: nicknameToSet,
@@ -274,7 +261,6 @@ export function useNakama(): NakamaState & NakamaActions {
     const socket = client.createSocket(USE_SSL, false);
     socketRef.current = socket;
 
-    // Register handlers BEFORE connect() so no events can be missed
     setupSocketHandlers(socket);
 
     await socket.connect(session, true);
@@ -282,7 +268,7 @@ export function useNakama(): NakamaState & NakamaActions {
     return { session, socket, userId: session.user_id! };
   };
 
-  // ── Public Actions ────────────────────────────────────────────
+
 
   const setNickname = useCallback((name: string) => {
     updateState({ nickname: name });
@@ -359,14 +345,14 @@ export function useNakama(): NakamaState & NakamaActions {
 
   const playAgain = useCallback(() => {
     if (socketRef.current) {
-      try { socketRef.current.disconnect(true); } catch (_) { /* ignore */ }
+      try { socketRef.current.disconnect(true); } catch (_) { }
       socketRef.current = null;
     }
     sessionRef.current = null;
     matchIdRef.current = null;
     matchmakerTicketRef.current = null;
-    setState({ ...INITIAL_STATE, nickname: nicknameRef.current });
-  }, []);
+    void startMatchmaking(nicknameRef.current);
+  }, [startMatchmaking]);
 
   const fetchLeaderboard = useCallback(async () => {
     if (!clientRef.current || !sessionRef.current) return;
@@ -375,20 +361,22 @@ export function useNakama(): NakamaState & NakamaActions {
         sessionRef.current,
         'tictactoe_global',
         [],
-        10,
-        undefined,
-        '0'
+        5
       );
       const entries: LeaderboardEntry[] = (result.records ?? []).map((r) => {
         let wins = 0, losses = 0, draws = 0;
         try {
-          const meta = JSON.parse(typeof r.metadata === 'string' ? r.metadata : '{}') as {
-            wins?: number; losses?: number; draws?: number;
-          };
+          let meta: any = {};
+          if (typeof r.metadata === 'string') {
+            meta = JSON.parse(r.metadata);
+          } else if (r.metadata && typeof r.metadata === 'object') {
+            meta = r.metadata;
+          }
+          
           wins = meta.wins ?? 0;
           losses = meta.losses ?? 0;
           draws = meta.draws ?? 0;
-        } catch (_) { /* ignore */ }
+        } catch (_) { }
         return {
           rank: Number(r.rank),
           userId: r.owner_id ?? '',

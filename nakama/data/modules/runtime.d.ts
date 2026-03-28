@@ -1,9 +1,4 @@
-// Nakama runtime type declarations for TypeScript server-side modules.
-// These types mirror the nkruntime global namespace injected by the Nakama server.
-// Based on Nakama 3.x runtime API.
-
 declare namespace nkruntime {
-  /** Log levels */
   export interface Logger {
     debug(format: string, ...args: unknown[]): void;
     info(format: string, ...args: unknown[]): void;
@@ -33,7 +28,6 @@ declare namespace nkruntime {
     tags?: { [key: string]: string };
   }
 
-  /** Presence in a match (a connected player). */
   export interface Presence {
     userId: string;
     sessionId: string;
@@ -42,7 +36,6 @@ declare namespace nkruntime {
     status?: string;
   }
 
-  /** Dispatcher for broadcasting messages in a match. */
   export interface MatchDispatcher {
     broadcastMessage(
       opCode: number,
@@ -55,7 +48,6 @@ declare namespace nkruntime {
     matchLabelUpdate(label: string): void;
   }
 
-  /** A message received in matchLoop from a client. */
   export interface MatchMessage {
     sender: Presence;
     opCode: number;
@@ -64,7 +56,6 @@ declare namespace nkruntime {
     receiveTime: number;
   }
 
-  /** A matchmaker result entry (one matched player). */
   export interface MatchmakerResult {
     presence: Presence;
     properties: { [key: string]: boolean | number | string };
@@ -79,7 +70,6 @@ declare namespace nkruntime {
     properties: { [key: string]: boolean | number | string };
   }
 
-  // ─── Sort Order & Operator enums ─────────────────────────────
   export const enum SortOrder {
     ASCENDING = 0,
     DESCENDING = 1,
@@ -99,7 +89,6 @@ declare namespace nkruntime {
     MONTHLY = '0 0 1 * *',
   }
 
-  // ─── Leaderboard Record ───────────────────────────────────────
   export interface LeaderboardRecord {
     leaderboardId: string;
     ownerId: string;
@@ -115,22 +104,17 @@ declare namespace nkruntime {
     maxNumScore?: number;
   }
 
-  // ─── Nakama server-side API ───────────────────────────────────
   export interface Nakama {
-    /** Authenticate or create a device account. */
     authenticateDevice(
       id: string,
       create?: boolean,
       username?: string
     ): string;
 
-    /** Convert a binary (Uint8Array) match message payload to a string. */
     binaryToString(b: Uint8Array | ArrayBuffer): string;
 
-    /** Create a new authoritative server match using the given handler name. */
     matchCreate(module: string, params?: { [key: string]: string }): string;
 
-    /** Create a leaderboard. */
     leaderboardCreate(
       id: string,
       authoritative: boolean,
@@ -140,7 +124,6 @@ declare namespace nkruntime {
       metadata: { [key: string]: unknown }
     ): void;
 
-    /** Write a record to a leaderboard. */
     leaderboardRecordWrite(
       id: string,
       ownerId: string,
@@ -150,7 +133,6 @@ declare namespace nkruntime {
       metadata?: { [key: string]: unknown }
     ): LeaderboardRecord;
 
-    /** List records from a leaderboard. */
     leaderboardRecordsList(
       id: string,
       ownerIds?: string[],
@@ -159,20 +141,16 @@ declare namespace nkruntime {
       expiry?: number
     ): LeaderboardRecordList;
 
-    /** Read a value from Nakama storage. */
     storageRead(
       reads: StorageReadRequest[]
     ): StorageObject[];
 
-    /** Write values to Nakama storage. */
     storageWrite(
       writes: StorageWriteRequest[]
     ): StorageWriteAck[];
 
-    /** Get a user account. */
     accountGetId(userId: string): Account;
 
-    /** Update account. */
     accountUpdateId(
       userId: string,
       username?: string,
@@ -261,8 +239,6 @@ declare namespace nkruntime {
     vars: { [key: string]: string };
   }
 
-  // ─── Match Handler function signatures ───────────────────────
-
   export type MatchInitFunction<T> = (
     ctx: Context,
     logger: Logger,
@@ -321,9 +297,6 @@ declare namespace nkruntime {
     graceSeconds: number
   ) => { state: T } | null;
 
-  // FIXED: matchSignal requires 7 parameters — `data` is the signal payload
-  // sent by nk.matchSignal(). The goja runtime validates arity and throws
-  // "matchSignal not found" if the function has fewer than 7 parameters.
   export type MatchSignalFunction<T> = (
     ctx: Context,
     logger: Logger,
@@ -331,7 +304,7 @@ declare namespace nkruntime {
     dispatcher: MatchDispatcher,
     tick: number,
     state: T,
-    data: string          // ← parameter 7 — required by Nakama runtime
+    data: string         
   ) => { state: T; data: string } | null;
 
   export interface MatchHandler<T> {
@@ -351,7 +324,6 @@ declare namespace nkruntime {
     matches: MatchmakerResult[]
   ) => string | void;
 
-  // ─── Initializer (used in InitModule) ────────────────────────
   export interface Initializer {
     registerMatch<T>(name: string, handlers: MatchHandler<T>): void;
     registerMatchmakerMatched(fn: MatchmakerMatchedFunction): void;
@@ -365,7 +337,6 @@ declare namespace nkruntime {
     payload: string
   ) => string | void;
 
-  // ─── InitModule ───────────────────────────────────────────────
   export type InitModule = (
     ctx: Context,
     logger: Logger,
