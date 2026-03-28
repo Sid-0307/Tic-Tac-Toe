@@ -1,168 +1,156 @@
-# Tic-Tac-Toe — Real-time Multiplayer
+# Multiplayer TicTacToe (React + Nakama + Supabase)
 
-A production-ready real-time multiplayer Tic-Tac-Toe game built with a server-authoritative architecture using **Nakama** as the game backend.
+## 🛠 Setup & Installation
 
-## Architecture
+### Backend (Nakama)
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        Browser                              │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │  React + TypeScript + Vite + TailwindCSS             │   │
-│  │  ┌────────────┐  ┌────────────┐  ┌────────────────┐  │   │
-│  │  │ Nickname   │  │Matchmaking │  │  GameBoard     │  │   │
-│  │  │ Modal      │→ │ Screen     │→ │  ResultScreen  │  │   │
-│  │  └────────────┘  └────────────┘  └────────────────┘  │   │
-│  │          ↕  useNakama hook  ↕                         │   │
-│  │     @heroiclabs/nakama-js SDK                         │   │
-│  └──────────────────────────────────────────────────────┘   │
-└──────────────────────┬──────────────────────────────────────┘
-                       │ WebSocket (opcodes 1-6)
-┌──────────────────────▼──────────────────────────────────────┐
-│                   Nakama Server (Docker)                     │
-│  ┌─────────────────┐   ┌──────────────────────────────────┐  │
-│  │  Matchmaker     │   │  Authoritative Match Runtime     │  │
-│  │  (queue pairs)  │→  │  tictactoe.ts (compiled to JS)   │  │
-│  └─────────────────┘   │  ┌─────────────────────────────┐ │  │
-│                        │  │  GameState (board, turn,     │ │  │
-│                        │  │  timer, players, scores)     │ │  │
-│                        │  └─────────────────────────────┘ │  │
-│                        └──────────────────────────────────┘  │
-│  ┌────────────────┐                                           │
-│  │   Leaderboard  │  tictactoe_global                        │
-│  │   (built-in)   │                                           │
-│  └────────────────┘                                           │
-└──────────────────────┬──────────────────────────────────────┘
-                       │ SQL
-┌──────────────────────▼──────────────────────────────────────┐
-│               PostgreSQL 14                                  │
-└──────────────────────────────────────────────────────────────┘
-```
-
-## Opcode Flow
-
-```
-Client A          Nakama Server           Client B
-   │                    │                    │
-   │── addMatchmaker ──►│                    │
-   │                    │◄── addMatchmaker ──│
-   │                    │                    │
-   │◄── onMatchmakerMatched (token) ────────►│
-   │                    │                    │
-   │── joinMatch(token)►│◄── joinMatch(token)│
-   │                    │  (both joined)     │
-   │◄──── OPCODE 1: GAME_START ─────────────►│
-   │                    │                    │
-   │── OPCODE 2: MOVE ─►│  (validate move)   │
-   │                    │                    │
-   │◄──── OPCODE 3: GAME_STATE_UPDATE ──────►│
-   │                    │                    │
-   │    (each second)   │                    │
-   │◄──── OPCODE 5: TIMER_UPDATE ───────────►│
-   │                    │                    │
-   │◄──── OPCODE 4: GAME_OVER (win/draw) ───►│
-```
-
-## Local Development
-
-### Prerequisites
-- [Docker Desktop](https://www.docker.com/products/docker-desktop)
-- [Node.js 18+](https://nodejs.org/)
-
-### Steps
-
-1. **Clone the repository**
-   ```bash
-   git clone <your-repo-url>
-   cd tictactoe
-   ```
-
-2. **Build the Nakama runtime module** (compile TS → JS)
-   ```bash
-   cd nakama
-   npm install
-   npm run build
-   cd ..
-   ```
-
-3. **Start Nakama + PostgreSQL**
-   ```bash
-   docker-compose up
-   ```
-   Wait for Nakama to be healthy (check `http://localhost:7350/healthcheck`).
-
-4. **Start the frontend dev server**
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
-5. **Open** `http://localhost:5173` in your browser.
-
-6. **Test multiplayer**: open a second browser tab (or use a private/incognito window) and navigate to the same URL. Enter different nicknames in each tab and click Continue — they will be matched automatically.
-
-### Environment Variables (Frontend)
-
-Copy `.env.example` to `.env.local`:
 ```bash
-cp frontend/.env.example frontend/.env.local
+cd nakama
+npm install
+npm run build
 ```
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `VITE_NAKAMA_HOST` | `localhost` | Nakama server hostname |
-| `VITE_NAKAMA_PORT` | `7350` | Nakama HTTP/WS port |
-| `VITE_NAKAMA_USE_SSL` | `false` | Use WSS/HTTPS |
+* Compiles: `tictactoe.ts → tictactoe.js`
+* Ensure `DB_URL` is set (Supabase connection)
 
-## How Server-Authoritative Logic Works
+---
 
-All game state lives **exclusively on the server** in `matchLoop`. The client is a pure view layer:
+### Frontend (Vite)
 
-1. **Client sends OPCODE 2** (MOVE) with `{ position: 0-8 }`
-2. **Server validates**: is it the sender's turn? Is the cell empty? Is the game still running?
-3. **If invalid**: silently dropped (prevents cheating)
-4. **If valid**: server places symbol, checks win/draw, updates `GameState`, broadcasts to all players
-5. **Timer**: runs server-side every tick (1/sec). If it reaches 0, the current player forfeits their turn; the server switches turns and resets the timer.
-6. **Leaderboard**: written server-side with `nk.leaderboardRecordWrite()` at game end.
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## Deployment to Render.com
+---
 
-1. **Push to GitHub** (ensure `nakama/data/modules/tictactoe.js` is committed — build it locally first)
+### Environment Variables
 
-2. **Connect to Render**:
-   - Go to [render.com](https://render.com) → New → Blueprint
-   - Connect your GitHub repo
-   - Render will detect `render.yaml` automatically
+**Backend (Render):**
 
-3. **Set environment variables** in the Render dashboard:
-   - For the frontend service: set `VITE_NAKAMA_HOST` to your Nakama service URL (e.g., `tictactoe-nakama.onrender.com`)
+```env
+DB_URL=postgres://USER:PASSWORD@HOST:PORT/postgres?sslmode=require
+```
 
-4. **Deploy order**:
-   - Deploy Nakama first
-   - Once healthy, deploy the frontend with the Nakama URL
+**Frontend (Vercel):**
 
-5. **Access**: your frontend URL will be something like `https://tictactoe-frontend.onrender.com`
+```env
+VITE_NAKAMA_HOST=tic-tac-toe-kf84.onrender.com
+VITE_NAKAMA_PORT=443
+VITE_NAKAMA_USE_SSL=true
+```
 
-## Architecture Decisions
+---
 
-| Decision | Rationale |
-|----------|-----------|
-| **Nakama** as backend | Ships with built-in matchmaking, leaderboards, authoritative server matches, and WebSocket support — eliminates writing a custom game server |
-| **Server-authoritative matches** | Prevents cheating; server validates every move; state never trusted from clients |
-| **Tick-rate 1 (1/sec) for timer** | Reliable server-side countdown without polling from clients; timer state is part of the authoritative game state |
-| **localStorage device ID** | Provides persistent anonymous auth; players keep their account across sessions without a registration flow |
-| **opcodes as integers** | Efficient binary-compatible wire format; integers are smaller than string event names |
-| **Full board in every broadcast** | Keeps clients in sync even if a message is missed; simpler than diffing |
+## 🏗 Architecture & Design
 
-## Tech Stack
+```
+Frontend (Vercel)
+        ↓
+Nakama Server (Render)
+        ↓
+Supabase PostgreSQL
+```
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 18 + TypeScript + Vite + TailwindCSS |
-| Nakama SDK | `@heroiclabs/nakama-js` |
-| Backend | Nakama 3.21.1 (open-source game server by Heroic Labs) |
-| Runtime logic | TypeScript → compiled JS (via esbuild) |
-| Database | PostgreSQL 14 |
-| Local dev | Docker Compose |
-| Cloud deploy | Render.com |
+### Key Decisions
+
+* **Nakama** → authoritative multiplayer server (matchmaking + real-time sync)
+* **Supabase Postgres** → managed DB (no local DB needed)
+* **JS Runtime (Goja)** → flexible game logic (`tictactoe.js`)
+* **Frontend isolated** → no direct DB access (security)
+
+---
+
+## 🚀 Deployment Process
+
+### Backend (Render)
+
+* Docker-based deployment
+* Uses:
+
+  ```bash
+  /nakama/nakama migrate up && nakama --socket.port ${PORT}
+  ```
+* Uses Supabase instead of local DB
+
+---
+
+### Frontend (Vercel)
+
+* Root: `frontend/`
+* Auto build via Vite
+* Uses env vars to connect to Render backend
+
+---
+
+## ⚙ API / Server Configuration
+
+* **Base URL:**
+
+  ```
+  https://tic-tac-toe-kf84.onrender.com
+  ```
+
+* **Health Check:**
+
+  ```
+  /v2/healthcheck
+  ```
+
+* **Runtime Module:**
+
+  ```
+  tictactoe.js
+  ```
+
+* **Auth:**
+
+  * Device-based (for testing)
+
+---
+
+### Important Flags
+
+```bash
+--socket.address 0.0.0.0
+--socket.port ${PORT}
+--runtime.js_entrypoint tictactoe.js
+```
+
+---
+
+## 🧪 Testing Multiplayer
+
+### 1. Backend Check
+
+Open:
+
+```
+https://tic-tac-toe-kf84.onrender.com/v2/healthcheck
+```
+
+---
+
+### 2. Run Frontend
+
+```
+https://tic-tac-toe-nine-weld-83.vercel.app
+```
+
+---
+
+### 3. Test Flow
+
+1. Open **2 browser tabs**
+2. Enter different usernames
+3. Join matchmaking
+4. Play game
+
+---
+
+### 4. Validate
+
+* Moves sync in real-time
+* Turn-based locking works
+* Match ends correctly
