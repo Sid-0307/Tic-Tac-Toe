@@ -11,3 +11,7 @@ FROM heroiclabs/nakama:3.21.1
 WORKDIR /nakama/data/modules
 
 COPY --from=builder /backend/data/modules/tictactoe.js .
+
+EXPOSE 7350
+
+ENTRYPOINT ["/bin/sh", "-c", "/nakama/nakama migrate up --database.address $DB_URL && exec /nakama/nakama --database.address $DB_URL --socket.port ${PORT:-7350} --logger.level DEBUG --runtime.js_entrypoint tictactoe.js"]
