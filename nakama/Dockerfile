@@ -8,9 +8,7 @@ RUN npm run build
 
 FROM heroiclabs/nakama:3.21.1
 
-WORKDIR /nakama/data/modules
-
-COPY --from=builder /backend/data/modules/tictactoe.js .
+COPY --from=builder /backend/data/modules/tictactoe.js /nakama/data/modules/tictactoe.js
 
 EXPOSE 7350
 
