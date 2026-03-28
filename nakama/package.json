@@ -1,0 +1,14 @@
+{
+  "name": "tictactoe-nakama",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "npx esbuild data/modules/tictactoe.ts --bundle=false --platform=node --target=es5 --loader:.ts=ts --outfile=data/modules/tictactoe.js",
+    "build:bundle": "npx esbuild data/modules/tictactoe.ts --bundle --platform=node --target=es5 --loader:.ts=ts --outfile=data/modules/tictactoe.js",
+    "typecheck": "npx tsc --noEmit"
+  },
+  "devDependencies": {
+    "esbuild": "^0.19.0",
+    "typescript": "^5.3.0"
+  }
+}

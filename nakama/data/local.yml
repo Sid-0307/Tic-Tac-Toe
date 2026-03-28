@@ -1,0 +1,7 @@
+name: nakama1
+
+logger:
+  level: "DEBUG"
+
+runtime:
+  js_entrypoint: "tictactoe.js"

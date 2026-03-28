@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES5",
+    "lib": ["ES6"],
+    "module": "commonjs",
+    "strict": false,
+    "noImplicitAny": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": "data/modules"
+  },
+  "files": [
+    "data/modules/tictactoe.ts",
+    "data/modules/runtime.d.ts"
+  ]
+}

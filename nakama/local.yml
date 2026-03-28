@@ -1,0 +1,16 @@
+name: nakama1
+
+logger:
+  level: "DEBUG"
+
+runtime:
+  js_entrypoint: "data/modules/tictactoe.js"
+
+console:
+  port: 7351
+
+socket:
+  port: 7350
+
+api:
+  port: 7350
