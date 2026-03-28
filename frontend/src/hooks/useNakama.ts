@@ -351,8 +351,7 @@ export function useNakama(): NakamaState & NakamaActions {
     if (!socketRef.current || !matchIdRef.current) return;
     try {
       const payload = JSON.stringify({ position });
-      const encoded = new TextEncoder().encode(payload);
-      socketRef.current.sendMatchState(matchIdRef.current, OPCODES.MOVE, encoded);
+      socketRef.current.sendMatchState(matchIdRef.current, OPCODES.MOVE, payload);
     } catch (err) {
       console.error('makeMove error:', err);
     }

@@ -323,12 +323,23 @@ function matchLoop(
 
     var moveData: { position: number };
     try {
-      var dataStr = typeof message.data === "string"
-        ? message.data
-        : String(message.data);
+      logger.info("Raw message data type: %s", typeof message.data);
+      if (typeof message.data !== "string") {
+        logger.info("Raw message data keys (if object): %s", Object.keys(message.data || {}).join(","));
+      }
+
+      var dataStr = nk.binaryToString(message.data as Uint8Array);
+      logger.info("Decoded with nk.binaryToString: %s", dataStr);
+    } catch (e) {
+      logger.info("nk.binaryToString failed, falling back to string coercion or message.data");
+      var dataStr = typeof message.data === "string" ? message.data : String(message.data);
+    }
+
+    try {
+      logger.info("Final dataStr to parse: %s", dataStr);
       moveData = JSON.parse(dataStr);
     } catch (e) {
-      logger.warn("Failed to parse move payload: %s", String(e));
+      logger.warn("Failed to parse move payload: %s (dataStr: %s)", String(e), dataStr);
       continue;
     }
 
